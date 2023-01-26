@@ -17,6 +17,9 @@ class Logger:
         self.logger = logging.getLogger(name)
         set_config()
 
+    def get_logger(self):
+        return self.logger
+
 
 if __name__ == '__main__':
     logger = Logger('TEST')

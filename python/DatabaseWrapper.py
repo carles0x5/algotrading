@@ -18,8 +18,8 @@ from python.Logger import Logger
 
 
 class DatabaseWrapper:
-    MIN_RECORDS = 2000
-    MAX_RECORDS = 10000
+    MIN_RECORDS = 10000
+    MAX_RECORDS = 20000
     SEC_PER_MIN = 60
     MIN_PER_H = 60
     H_PER_DAY = 24
@@ -27,12 +27,13 @@ class DatabaseWrapper:
     DEFAULT_API_LIMIT = 1000
     BASE_DIR = Path(os.path.dirname(os.path.abspath(__file__))).parents[0]
 
-    def __init__(self):
+    def __init__(self, exchange_connector=None):
         self.database_name = 'db/db'
         self.candles_table = 'RAW_CANDLES_DATA'
+        self.parameters_table = 'OPTIMISATION_PARAMETERS'
 
         # Internal variables
-        self._exchange_connector = ExchangeConnector()
+        self._exchange_connector = exchange_connector if exchange_connector else ExchangeConnector()
         self._sql_connection = {}
 
         # Logger
@@ -48,19 +49,19 @@ class DatabaseWrapper:
         except Exception as e:
             self.logger.error(f'Error creating SQL connection: {e}')
 
-    def execute_sql_procedure(self, query):
+    def execute_sql_procedure(self, query: str):
         try:
             return self._sql_connection.execute(query)
         except Exception as e:
             self.logger.error(f'Error executing SQL procedure: {e}')
 
-    def read_sql_table(self, query):
+    def read_sql_table(self, query: str):
         try:
             return pd.read_sql(query, con=self._sql_connection)
         except Exception as e:
             self.logger.error(f'Error reading SQL table: {e}')
 
-    def market_data_update(self, pair, interval):
+    def market_data_update(self, pair: str, interval: str):
         # Set initial values
         amount = int(interval[0])
         unit = interval[1]
@@ -72,13 +73,17 @@ class DatabaseWrapper:
                         self.H_PER_DAY * self.MIN_PER_H * self.SEC_PER_MIN * int(unit == 'd') +
                         self.MIN_PER_H * self.SEC_PER_MIN * int(unit == 'h') +
                         self.SEC_PER_MIN * int(unit == 'm')) * amount
-        first_ts_s = current_ts_s - max_sec_diff
+        first_ts_s = max(current_ts_s - max_sec_diff, 0)
         first_date = pd.to_datetime(first_ts_s * 1e9)
         query = f"DELETE FROM {self.candles_table} WHERE pair = '{pair}' AND interval = '{interval}' " \
                 f"AND open_time < '{first_date}'"
         self.execute_sql_procedure(query)
 
-        # TODO: Delete last row to update last price
+        # Delete last row to update last price
+        query = f"DELETE FROM {self.candles_table} WHERE pair = '{pair}' AND interval = '{interval}' " \
+                f"AND open_time = (SELECT MAX(open_time) as max_date FROM {self.candles_table} " \
+                f"WHERE pair = '{pair}' AND interval = '{interval}')"
+        self.execute_sql_procedure(query)
 
         # Select latest date for pair and interval in database
         query = f"SELECT MAX(open_time) as max_date FROM {self.candles_table} " \
@@ -101,7 +106,8 @@ class DatabaseWrapper:
                               self.H_PER_DAY * self.MIN_PER_H * self.SEC_PER_MIN * int(unit == 'd') +
                               self.MIN_PER_H * self.SEC_PER_MIN * int(unit == 'h') +
                               self.SEC_PER_MIN * int(unit == 'm')) * amount
-        from_ts_s = current_ts_s - sec_diff
+        from_ts_s = max(current_ts_s - sec_diff, 0)
+        sec_diff = current_ts_s - from_ts_s
 
         # Write values to database by reading a maximum of 1000 records at a time
         iterations = math.ceil(records / self.DEFAULT_API_LIMIT)
@@ -127,5 +133,6 @@ class DatabaseWrapper:
 
 if __name__ == '__main__':
     dbw = DatabaseWrapper()
-    query = f"DELETE FROM {dbw.candles_table} WHERE pair = 'BTCUSDT' AND interval = '1d' "
-    dbw.market_data_update(pair='BTCUSDT', interval='1h')
+    # query = f"DELETE FROM {dbw.candles_table}"
+    # dbw.execute_sql_procedure(query)
+    dbw.market_data_update(pair='BTCUSDT', interval='4h')

@@ -50,6 +50,18 @@ class ExchangeConnector(AppConfig):
         data[['open_time', 'close_time']] = data[['open_time', 'close_time']].apply(pd.to_datetime, unit='ms')
         return data
 
+    def read_balance(self):
+        # TODO
+        pass
+
+    def buy_asset(self):
+        # TODO
+        pass
+
+    def sell_asset(self):
+        # TODO
+        pass
+
     def _method(self, endpoint: str, params: dict = None):
         try:
             method = getattr(self.client, endpoint)
