@@ -11,27 +11,28 @@ from python.Logger import Logger
 class Indicators:
 
     def __init__(self):
-        # Parameters
-        self.results = pd.DataFrame
-
         # Logger
-        self.logger = Logger('Ind').get_logger()
+        self.logger = Logger(self.__class__.__name__).logger
 
-    def sma(self, length: int):
-        name = f'SMA_{length}'
-        self.results[name] = self.results['close'].rolling(window=length).mean()
+    @staticmethod
+    def sma(df, length: int, column='close'):
+        sma_vals = df[column].rolling(window=length).mean()
+        return sma_vals
 
-    def ema(self, length: int):
-        name = f'EMA_{length}'
-        self.results[name] = self.results['close'].ewm(span=length, adjust=False).mean()
+    @staticmethod
+    def ema(df, length: int, column='close'):
+        ema_vals = df[column].ewm(span=length, adjust=False).mean()
+        return ema_vals
 
-    def hurst(self, length: int):
-        name = f'hurst_{length}'
-        self.results[name] = self.results['close'].rolling(length).apply(lambda x: pyeeg.hurst(x))
+    @staticmethod
+    def hurst(df, length: int, column='close'):
+        hurst_vals = df[column].rolling(length).apply(lambda x: pyeeg.hurst(x))
+        return hurst_vals
 
-    def mom(self, length):
-        name = f'mom_{length}'
-        self.results[name] = self.results['close'].pct_change(periods=length)
+    @staticmethod
+    def mom(df, length, column='close'):
+        mom_vals = df[column].pct_change(periods=length)
+        return mom_vals
 
     def rsi(self):
         pass

@@ -17,7 +17,7 @@ class ExchangeConnector(AppConfig):
         super().__init__()
         if exchange.upper() == 'BINANCE':
             self.client = Spot(key=self._api_key, secret=self._api_secret)
-        self.logger = Logger('EC').logger
+        self.logger = Logger(self.__class__.__name__).logger
 
     def read_candlestick_data(self, pair: str, interval: str = '1d', start_ts: int = None, end_ts: int = None,
                               limit: int = 1000) -> pd.DataFrame:

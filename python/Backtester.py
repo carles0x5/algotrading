@@ -18,7 +18,7 @@ from python.Strategy import Strategy
 
 class Backtester:
 
-    def __init__(self, pair: str = 'BTCUSDT', interval: str = '4h', initial_capital: int = 10000,
+    def __init__(self, pair: str = 'BTCUSDT', interval: str = '4h', initial_capital: int = 5000,
                  start_date: datetime = None, end_date: datetime = None):
         # Parameters
         self.start_date = start_date
@@ -37,7 +37,7 @@ class Backtester:
         self._strategy = {}
 
         # Logger
-        self.logger = Logger('BT').get_logger()
+        self.logger = Logger(self.__class__.__name__).logger
 
         # Initialise data and strategy
         self.get_data()
@@ -81,17 +81,13 @@ class Backtester:
         """
         return self.initial_capital
 
-    def get_taker_fee(self):
-        """
-        Gets the taker fee for the exchange defined
-        :return:
-        """
-        # In the future, read from the from exchange
+    @property
+    def taker_fee(self):
         return self.taker_fee
 
     def run_wfa(self, strategy: str, start_date: datetime = None, end_date: datetime = None):
         """
-        Runs Walk Forward Analysis by selecting the best parameters that fit the trining set and testing the same values
+        Runs Walk Forward Analysis by selecting the best parameters that fit the training set and testing the same values
         on the test set
         :param strategy:
         :param start_date:
@@ -169,7 +165,7 @@ class Backtester:
                        'last_test_date': [last_date]}
             self._strategy.wfa_scores = pd.concat([self._strategy.wfa_scores, pd.DataFrame(new_row)], ignore_index=True)
 
-        self.get_wfa_output(strategy)
+        self._get_wfa_output(strategy)
 
     def run_backtest(self, strategy: str, params: dict, data: pd.DataFrame = None, first_date: datetime = None,
                      append_results: bool = False):
@@ -222,7 +218,7 @@ class Backtester:
 
         return params_grid
 
-    def get_wfa_output(self, strategy):
+    def _get_wfa_output(self, strategy):
         """
         Computes all the metrics for the whole range of backtested history
         :param strategy: name of the backtested strategy
@@ -255,8 +251,9 @@ class Backtester:
 
 if __name__ == '__main__':
     bt_parameters = {'pair': 'BTCUSDT',
-                     'interval': '1d',
-                     'strategy': 'bnh'}
+                     'interval': '4h',
+                     'strategy': 'modified_macd'}
+
     bt = Backtester(interval=bt_parameters.get('interval'), pair=bt_parameters.get('pair')) # , start_date=pd.to_datetime('20210101'))
     bt.run_wfa(strategy=bt_parameters.get('strategy'))
     print('a')

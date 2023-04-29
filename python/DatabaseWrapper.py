@@ -37,12 +37,12 @@ class DatabaseWrapper:
         self._sql_connection = {}
 
         # Logger
-        self.logger = Logger('DBW').logger
+        self.logger = Logger(self.__class__.__name__).logger
 
         # Functions
-        self.create_connection()
+        self.create_db_connection()
 
-    def create_connection(self):
+    def create_db_connection(self):
         try:
             db_path = os.path.join(self.BASE_DIR, "{}.db".format(self.database_name))
             self._sql_connection = create_engine('sqlite:///' + db_path, echo=False)
@@ -122,13 +122,6 @@ class DatabaseWrapper:
             res = data.to_sql(self.candles_table, con=self._sql_connection, if_exists='append', index=False)
 
         self.logger.info(f'Rows inserted in {self.candles_table} : {str(rows)}')
-        return 0
-
-    def get_exchange_connector(self):
-        return self._exchange_connector
-
-    def get_sql_connector(self):
-        return self._sql_connection
 
 
 if __name__ == '__main__':

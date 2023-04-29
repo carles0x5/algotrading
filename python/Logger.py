@@ -5,21 +5,25 @@ import logging
 # User custom function, classes and objects
 
 
-def set_config():
-    logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(funcName)s:%(lineno)d - %(message)s',
-                        datefmt='%Y/%m/%d %I:%M:%S %p',
-                        level=logging.INFO)
-
-
 class Logger:
 
     def __init__(self, name: str):
         self.logger = logging.getLogger(name)
-        set_config()
+        self.set_config()
 
-    def get_logger(self):
+    @staticmethod
+    def set_config():
+        logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(funcName)s:%(lineno)d - %(message)s',
+                            datefmt='%Y/%m/%d %I:%M:%S %p',
+                            level=logging.INFO)
+
+    @property
+    def logger(self):
         return self.logger
 
+    @logger.setter
+    def logger(self, name):
+        self.logger = logging.getLogger(name)
 
 if __name__ == '__main__':
     logger = Logger('TEST')
